@@ -1,0 +1,107 @@
+{
+  "formatVersion": 1,
+  "name": "Java 21",
+  "releaseTime": "2026-10-22T08:58:06Z",
+  "runtimes": [
+    {
+      "checksum": {
+        "hash": "d7f5d5cf865a2902b70ff549b97586a7d3f234e016f041ab447ea740c7d66d1c",
+        "type": "sha256"
+      },
+      "downloadType": "archive",
+      "name": "eclipse_temurin_21.0.13+9",
+      "packageType": "jdk",
+      "releaseTime": "2026-10-22T08:58:06Z",
+      "runtimeOS": "linux-x64",
+      "url": "https://mva.quad4.io/java/temurin/21/linux-x64/OpenJDK21U-jdk_x64_linux_hotspot_21.0.13_9.tar.gz",
+      "vendor": "eclipse",
+      "version": {
+        "build": 9,
+        "major": 21,
+        "minor": 0,
+        "name": "21.0.13+9-LTS",
+        "security": 13
+      }
+    },
+    {
+      "checksum": {
+        "hash": "e3522e707fc7dbe2a72c30746b1e7068301a0213ecd213d4491f35a14eb55578",
+        "type": "sha256"
+      },
+      "downloadType": "archive",
+      "name": "eclipse_temurin_21.0.13+9",
+      "packageType": "jdk",
+      "releaseTime": "2026-10-22T08:58:06Z",
+      "runtimeOS": "linux-arm64",
+      "url": "https://mva.quad4.io/java/temurin/21/linux-aarch64/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.13_9.tar.gz",
+      "vendor": "eclipse",
+      "version": {
+        "build": 9,
+        "major": 21,
+        "minor": 0,
+        "name": "21.0.13+9-LTS",
+        "security": 13
+      }
+    },
+    {
+      "checksum": {
+        "hash": "f9d6e191ab098c0d416e7d588a24420a8621cd2f4720dab2459b8b7b2d2d8b4e",
+        "type": "sha256"
+      },
+      "downloadType": "archive",
+      "name": "eclipse_temurin_21.0.13+9",
+      "packageType": "jdk",
+      "releaseTime": "2026-10-22T08:58:06Z",
+      "runtimeOS": "windows-x64",
+      "url": "https://mva.quad4.io/java/temurin/21/windows-x64/OpenJDK21U-jdk_x64_windows_hotspot_21.0.12.1_1.zip",
+      "vendor": "eclipse",
+      "version": {
+        "build": 9,
+        "major": 21,
+        "minor": 0,
+        "name": "21.0.13+9-LTS",
+        "security": 13
+      }
+    },
+    {
+      "checksum": {
+        "hash": "9aa1d1c17ae5467a022679e7e0af5c00797d94ac462ed1a46f4db07a8a34a6dd",
+        "type": "sha256"
+      },
+      "downloadType": "archive",
+      "name": "eclipse_temurin_21.0.13+9",
+      "packageType": "jdk",
+      "releaseTime": "2026-10-22T08:58:06Z",
+      "runtimeOS": "mac-os-x64",
+      "url": "https://mva.quad4.io/java/temurin/21/mac-x64/OpenJDK21U-jdk_x64_mac_hotspot_21.0.13_9.tar.gz",
+      "vendor": "eclipse",
+      "version": {
+        "build": 9,
+        "major": 21,
+        "minor": 0,
+        "name": "21.0.13+9-LTS",
+        "security": 13
+      }
+    },
+    {
+      "checksum": {
+        "hash": "bf036b35b071bfb2f54f2c0af8ee8d88afa95ee6eb3dce02c0f94cfc2524d04a",
+        "type": "sha256"
+      },
+      "downloadType": "archive",
+      "name": "eclipse_temurin_21.0.13+9",
+      "packageType": "jdk",
+      "releaseTime": "2026-10-22T08:58:06Z",
+      "runtimeOS": "mac-os-arm64",
+      "url": "https://mva.quad4.io/java/temurin/21/mac-aarch64/OpenJDK21U-jdk_aarch64_mac_hotspot_21.0.13_9.tar.gz",
+      "vendor": "eclipse",
+      "version": {
+        "build": 9,
+        "major": 21,
+        "minor": 0,
+        "name": "21.0.13+9-LTS",
+        "security": 13
+      }
+    }
+  ]
+}

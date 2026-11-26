@@ -125,7 +125,7 @@ jobs:
       base64-subjects: ${{ needs.create_release.outputs.hashes }}
       upload-assets: true
       upload-tag-name: ${{ needs.create_release.outputs.version }}
-      draft-release: false
+      draft-release: true
   publish_release:
     name: Publish release
     needs: [create_release, slsa_provenance]

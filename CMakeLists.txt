@@ -204,6 +204,11 @@ set(Launcher_BUILD_ARTIFACT "" CACHE STRING "Artifact name to help the updater i
 # The metadata server
 set(Launcher_META_URL "https://mva.quad4.io/meta/v1/" CACHE STRING "URL to fetch Launcher's meta files from.")
 
+# Migrate existing build trees from the upstream default. User-selected custom values are preserved.
+if(Launcher_META_URL STREQUAL "https://meta.prismlauncher.org/v1/")
+    set(Launcher_META_URL "https://mva.quad4.io/meta/v1/" CACHE STRING "URL to fetch Launcher's meta files from." FORCE)
+endif()
+
 # Imgur API Client ID
 set(Launcher_IMGUR_CLIENT_ID "5b97b0713fba4a3" CACHE STRING "Client ID you can get from Imgur when you register an application")
 

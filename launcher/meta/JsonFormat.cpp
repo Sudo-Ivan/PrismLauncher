@@ -153,7 +153,18 @@ Result<> parseVersionList(const QJsonObject& obj, VersionList* ptr)
 Result<> parseVersion(const QJsonObject& obj, Version* ptr)
 {
     TRY(parseFormatVersion(obj))
-    TRY_INTO(const auto& ver, parseVersionInternal(obj))
+
+    // Some mirrors omit the component identifiers in detail documents. They are
+    // already known from the requested path, so fill them in before validating.
+    auto fixedObj = obj;
+    if (!fixedObj.contains("uid")) {
+        fixedObj.insert("uid", ptr->uid());
+    }
+    if (!fixedObj.contains("version")) {
+        fixedObj.insert("version", ptr->version());
+    }
+
+    TRY_INTO(const auto& ver, parseVersionInternal(fixedObj))
     ptr->merge(ver);
     return {};
 }
