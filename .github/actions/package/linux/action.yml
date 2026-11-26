@@ -41,7 +41,7 @@ runs:
 
     - name: Setup build variables
       shell: bash
-      run: |
+      run: | # zizmor: ignore[github-env]
         # Fixup architecture naming for AppImages
         dpkg_arch="$(dpkg-architecture -q DEB_HOST_ARCH_CPU)"
         case "$dpkg_arch" in
@@ -69,13 +69,16 @@ runs:
         INSTALL_APPIMAGE_DIR: install-appdir
 
         GPG_PRIVATE_KEY: ${{ inputs.gpg-private-key }}
+        INPUTS_BUILD_TYPE: ${{ inputs.build-type }}
+        INPUTS_GPG_PRIVATE_KEY_ID: ${{ inputs.gpg-private-key-id }}
+        GITHUB_EVENT_REPOSITORY_NAME: ${{ github.event.repository.name }}
       run: |
-        cmake --install ${{ env.BUILD_DIR }} --config ${{ inputs.build-type }} --prefix ${{ env.INSTALL_APPIMAGE_DIR }}
+        cmake --install ${{ env.BUILD_DIR }} --config ${INPUTS_BUILD_TYPE} --prefix ${{ env.INSTALL_APPIMAGE_DIR }}
 
-        if [ '${{ inputs.gpg-private-key-id }}' != '' ]; then
+        if [ '${INPUTS_GPG_PRIVATE_KEY_ID}' != '' ]; then
           echo "$GPG_PRIVATE_KEY" > privkey.asc
           gpg --import privkey.asc
-          gpg --export --armor ${{ inputs.gpg-private-key-id }} > pubkey.asc
+          gpg --export --armor ${INPUTS_GPG_PRIVATE_KEY_ID} > pubkey.asc
         else
           echo ":warning: Skipped code signing for Linux AppImage, as gpg key was not present." >> $GITHUB_STEP_SUMMARY
         fi
@@ -102,14 +105,14 @@ runs:
         mv "$INSTALL_APPIMAGE_DIR"/{sharun,AppRun}
         ls -la "$INSTALL_APPIMAGE_DIR"
 
-        if [[ "${{ github.ref_type }}" == "tag" ]]; then
+        if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
           APPIMAGE_DEST="PrismLauncher-Linux-$APPIMAGE_ARCH.AppImage"
         else
-          APPIMAGE_DEST="PrismLauncher-Linux-$VERSION-${{ inputs.build-type }}-$APPIMAGE_ARCH.AppImage"
+          APPIMAGE_DEST="PrismLauncher-Linux-$VERSION-${INPUTS_BUILD_TYPE}-$APPIMAGE_ARCH.AppImage"
         fi
 
         mkappimage \
-          --updateinformation "gh-releases-zsync|${{ github.repository_owner }}|${{ github.event.repository.name }}|latest|PrismLauncher-Linux-$APPIMAGE_ARCH.AppImage.zsync" \
+          --updateinformation "gh-releases-zsync|${{ github.repository_owner }}|${GITHUB_EVENT_REPOSITORY_NAME}|latest|PrismLauncher-Linux-$APPIMAGE_ARCH.AppImage.zsync" \
           "$INSTALL_APPIMAGE_DIR" \
           "$APPIMAGE_DEST"
 
@@ -119,9 +122,10 @@ runs:
         BUILD_DIR: build
 
         INSTALL_PORTABLE_DIR: install-portable
-      run: |
-        cmake --install ${{ env.BUILD_DIR }} --config ${{ inputs.build-type }} --prefix ${{ env.INSTALL_PORTABLE_DIR }}
-        cmake --install ${{ env.BUILD_DIR }} --config ${{ inputs.build-type }} --prefix ${{ env.INSTALL_PORTABLE_DIR }} --component portable
+        INPUTS_BUILD_TYPE: ${{ inputs.build-type }}
+      run: | # zizmor: ignore[github-env]
+        cmake --install ${{ env.BUILD_DIR }} --config ${INPUTS_BUILD_TYPE} --prefix ${{ env.INSTALL_PORTABLE_DIR }}
+        cmake --install ${{ env.BUILD_DIR }} --config ${INPUTS_BUILD_TYPE} --prefix ${{ env.INSTALL_PORTABLE_DIR }} --component portable
 
         UBUNTU_LIB_PATH="/usr/lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH)/"
         sharun lib4bin \
@@ -139,19 +143,19 @@ runs:
         tar -czf ../PrismLauncher-portable.tar.gz *
 
     - name: Upload binary tarball
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: PrismLauncher-${{ inputs.artifact-name }}-Qt6-Portable-${{ inputs.version }}-${{ inputs.build-type }}
         path: PrismLauncher-portable.tar.gz
 
     - name: Upload AppImage
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: PrismLauncher-${{ runner.os }}-${{ inputs.version }}-${{ inputs.build-type }}-${{ env.APPIMAGE_ARCH }}.AppImage
         path: PrismLauncher-${{ runner.os }}-*${{ env.APPIMAGE_ARCH }}.AppImage
 
     - name: Upload AppImage Zsync
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: PrismLauncher-${{ runner.os }}-${{ inputs.version }}-${{ inputs.build-type }}-${{ env.APPIMAGE_ARCH }}.AppImage.zsync
         path: PrismLauncher-${{ runner.os }}-*${{ env.APPIMAGE_ARCH }}.AppImage.zsync

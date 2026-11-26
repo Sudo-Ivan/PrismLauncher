@@ -18,7 +18,7 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
-      run: |
+      run: | # zizmor: ignore[github-env]
         # Determinate AppImage architecture to use
         dpkg_arch="$(dpkg-architecture -q DEB_HOST_ARCH_CPU)"
         case "$dpkg_arch" in

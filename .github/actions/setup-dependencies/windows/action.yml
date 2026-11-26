@@ -6,9 +6,6 @@ inputs:
     description: Type for the build
     required: true
     default: Debug
-  msystem:
-    description: MSYS2 subsystem to use
-    required: false
   vcvars-arch:
     description: Visual Studio architecture to use
     required: true
@@ -18,29 +15,25 @@ runs:
   using: composite
 
   steps:
-    # NOTE: Installed on MinGW as well for SignTool
     - name: Enter VS Developer shell
-      if: ${{ runner.os == 'Windows' }}
-      uses: ilammy/msvc-dev-cmd@v1
+      uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
       with:
         arch: ${{ inputs.vcvars-arch }}
 
-    - name: Setup Java (MSVC)
-      uses: actions/setup-java@v6
+    - name: Setup Java
+      uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.0.0
       with:
-        # NOTE(@getchoo): We should probably stay on Zulu.
-        # Temurin doesn't have Java 17 builds for WoA
         distribution: zulu
         java-version: 17
 
-    - name: Setup vcpkg cache (MSVC)
-      if: ${{ inputs.msystem == '' && inputs.build-type == 'Debug' }}
+    - name: Setup vcpkg cache
+      if: ${{ inputs.build-type == 'Debug' }}
       shell: pwsh
       env:
         USERNAME: ${{ github.repository_owner }}
         GITHUB_TOKEN: ${{ github.token }}
         FEED_URL: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
-      run: |
+      run: | # zizmor: ignore[github-env]
         .$(vcpkg fetch nuget) `
           sources add `
           -Source "$env:FEED_URL" `
@@ -53,46 +46,7 @@ runs:
           -Source "$env:FEED_URL"
         "VCPKG_BINARY_SOURCES=clear;nuget,$env:FEED_URL,readwrite" | Out-File -Append $env:GITHUB_ENV
 
-    - name: Setup vcpkg environment (MSVC)
-      if: ${{ inputs.msystem == '' }}
+    - name: Setup vcpkg environment
       shell: bash
-      run: |
+      run: | # zizmor: ignore[github-env]
         echo "VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT" >> "$GITHUB_ENV"
-
-    - name: Setup MSYS2 (MinGW)
-      if: ${{ inputs.msystem != '' }}
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: ${{ inputs.msystem }}
-        update: true
-        install: >-
-          git
-        pacboy: >-
-          toolchain:p
-          ccache:p
-          cmake:p
-          ninja:p
-
-    - name: List pacman packages (MinGW)
-      if: ${{ inputs.msystem != '' }}
-      shell: msys2 {0}
-      run: |
-        pacman -Qe
-
-    - name: Retrieve ccache cache (MinGW)
-      if: ${{ inputs.msystem != '' && inputs.build-type == 'Debug' }}
-      uses: actions/cache@v6.1.0
-      with:
-        path: '${{ github.workspace }}\.ccache'
-        key: ${{ runner.os }}-mingw-w64-ccache-${{ github.run_id }}
-        restore-keys: |
-          ${{ runner.os }}-mingw-w64-ccache
-
-    - name: Setup ccache (MinGW)
-      if: ${{ inputs.msystem != '' && inputs.build-type == 'Debug' }}
-      shell: msys2 {0}
-      run: |
-        ccache --set-config=cache_dir='${{ github.workspace }}\.ccache'
-        ccache --set-config=max_size='500M'
-        ccache --set-config=compression=true
-        ccache -p  # Show config

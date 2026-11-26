@@ -679,8 +679,9 @@ QList<GitHubReleaseAsset> PrismUpdaterApp::validReleaseArtifacts(const GitHubRel
         qWarning() << "Build platform is not set!";
     }
     for (const auto& asset : release.assets) {
-        if (asset.name.endsWith(".zsync")) {
-            qDebug() << "Rejecting zsync file" << asset.name;
+        const auto lowerName = asset.name.toLower();
+        if (lowerName.endsWith(".zsync") || lowerName.endsWith(".flatpak") || lowerName.endsWith(".jsonl") || lowerName == "sha256sums") {
+            qDebug() << "Rejecting non-update asset" << asset.name;
             continue;
         }
         if (!m_isAppimage && asset.name.toLower().endsWith("appimage")) {

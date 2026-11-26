@@ -17,6 +17,11 @@ on:
       environment:
         description: Deployment environment to run under
         type: string
+    secrets:
+      GPG_PRIVATE_KEY:
+        required: false
+      GPG_PRIVATE_KEY_ID:
+        required: false
   workflow_dispatch:
     inputs:
       build-type:
@@ -34,8 +39,9 @@ jobs:
 
     permissions:
       contents: read
-      # Required for Azure Trusted Signing
+      # Required for build provenance attestations
       id-token: write
+      attestations: write
       # Required for vcpkg binary cache
       packages: write
 
@@ -47,70 +53,38 @@ jobs:
             artifact-name: Linux
             qt-version: 6.11.2
 
-          - os: ubuntu-24.04-arm
-            artifact-name: Linux-aarch64
-            qt-version: 6.11.2
-
-          - os: windows-2022
-            artifact-name: Windows-MinGW-w64
-            msystem: CLANG64
-            vcvars-arch: amd64_x86
-            qt-version: 6.11.2
-
           - os: windows-2022
             artifact-name: Windows-MSVC
-            # TODO(@getchoo): This is the default in setup-dependencies/windows. Why isn't it working?!?!
             vcvars-arch: amd64
-            qt-version: 6.11.2
-
-          - os: windows-11-arm
-            artifact-name: Windows-MSVC-arm64
-            vcvars-arch: arm64
-            qt-version: 6.11.2
-
-          - os: macos-26
-            artifact-name: macOS
-            macosx-deployment-target: 13.0
             qt-version: 6.11.2
 
     runs-on: ${{ matrix.os }}
 
     defaults:
       run:
-        shell: ${{ matrix.msystem != '' && 'msys2 {0}' || 'bash' }}
+        shell: bash
 
     env:
       ARTIFACT_NAME: ${{ matrix.artifact-name }}-Qt6
-      BUILD_PLATFORM: official
+      BUILD_PLATFORM: custom
       BUILD_TYPE: ${{ inputs.build-type || 'Debug' }}
       CMAKE_PRESET: ci
 
-      CMAKE_OSX_ARCHITECTURES: x86_64;arm64
-      MACOSX_DEPLOYMENT_TARGET: ${{ matrix.macosx-deployment-target }}
-
     steps:
-      ##
-      # SETUP
-      ##
-
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: true
+          persist-credentials: false
 
       - name: Setup dependencies
         id: setup-dependencies
-        uses: ./.github/actions/setup-dependencies
+        uses: $/.github/actions/setup-dependencies
         with:
           build-type: ${{ env.BUILD_TYPE }}
           artifact-name: ${{ matrix.artifact-name }}
-          msystem: ${{ matrix.msystem }}
           vcvars-arch: ${{ matrix.vcvars-arch }}
           qt-version: ${{ matrix.qt-version }}
-
-      ##
-      # BUILD
-      ##
 
       - name: Configure project
         run: |
@@ -121,26 +95,27 @@ jobs:
           cmake --build --preset "$CMAKE_PRESET" --config "$BUILD_TYPE"
 
       - name: Run tests
-        env:
-          MSYS2_PATH_TYPE: inherit
         run: |
           ctest --preset "$CMAKE_PRESET" --build-config "$BUILD_TYPE"
 
-      ##
-      # PACKAGE
-      ##
-
-      - name: Get short version
-        id: short-version
+      - name: Get version
+        id: version
         shell: bash
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          echo "version=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          if [ "$REF_TYPE" = "tag" ]; then
+            echo "version=$REF_NAME" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Package (Linux)
         if: ${{ runner.os == 'Linux' }}
-        uses: ./.github/actions/package/linux
+        uses: $/.github/actions/package/linux
         with:
-          version: ${{ steps.short-version.outputs.version }}
+          version: ${{ steps.version.outputs.version }}
           build-type: ${{ steps.setup-dependencies.outputs.build-type }}
           artifact-name: ${{ matrix.artifact-name }}
           qt-version: ${{ steps.setup-dependencies.outputs.qt-version }}
@@ -148,33 +123,76 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-private-key-id: ${{ secrets.GPG_PRIVATE_KEY_ID }}
 
-      - name: Package (macOS)
-        if: ${{ runner.os == 'macOS' }}
-        uses: ./.github/actions/package/macos
-        with:
-          version: ${{ steps.short-version.outputs.version }}
-          build-type: ${{ steps.setup-dependencies.outputs.build-type }}
-          artifact-name: ${{ matrix.artifact-name }}
-
-          apple-codesign-cert: ${{ secrets.APPLE_CODESIGN_CERT }}
-          apple-codesign-password: ${{ secrets.APPLE_CODESIGN_PASSWORD }}
-          apple-codesign-id: ${{ secrets.APPLE_CODESIGN_ID }}
-          apple-notarize-apple-id: ${{ secrets.APPLE_NOTARIZE_APPLE_ID }}
-          apple-notarize-team-id: ${{ secrets.APPLE_NOTARIZE_TEAM_ID }}
-          apple-notarize-password: ${{ secrets.APPLE_NOTARIZE_PASSWORD }}
-          sparkle-ed25519-key: ${{ secrets.SPARKLE_ED25519_KEY }}
-
       - name: Package (Windows)
         if: ${{ runner.os == 'Windows' }}
-        uses: ./.github/actions/package/windows
-        env:
-          CI_HAS_ACCESS_TO_AZURE: ${{ vars.CI_HAS_ACCESS_TO_AZURE || '' }}
+        uses: $/.github/actions/package/windows
         with:
-          version: ${{ steps.short-version.outputs.version }}
+          version: ${{ steps.version.outputs.version }}
           build-type: ${{ steps.setup-dependencies.outputs.build-type }}
           artifact-name: ${{ matrix.artifact-name }}
-          msystem: ${{ matrix.msystem }}
 
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Attest build provenance (Linux)
+        if: ${{ github.event_name != 'pull_request' && runner.os == 'Linux' }}
+        uses: actions/attest-build-provenance@8beda2b7ed98355c0e97c0a63bec38ae472e66c4 # v4.2.2
+        with:
+          subject-path: |
+            PrismLauncher-*.AppImage
+            PrismLauncher-portable.tar.gz
+
+      - name: Attest build provenance (Windows)
+        if: ${{ github.event_name != 'pull_request' && runner.os == 'Windows' }}
+        uses: actions/attest-build-provenance@8beda2b7ed98355c0e97c0a63bec38ae472e66c4 # v4.2.2
+        with:
+          subject-path: |
+            PrismLauncher-Windows-MSVC-*.zip
+            PrismLauncher-Setup.exe
+
+  flatpak:
+    name: Flatpak (x86_64)
+
+    permissions:
+      contents: read
+      # Required for build provenance attestations
+      id-token: write
+      attestations: write
+
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+          persist-credentials: false
+
+      - name: Install flatpak-builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user -y flathub org.kde.Platform//6.10 org.kde.Sdk//6.10
+
+      - name: Build flatpak
+        run: |
+          flatpak-builder --user --disable-rofiles-fuse --force-clean \
+            --state-dir=/tmp/flatpak-state \
+            --repo=/tmp/flatpak-repo \
+            /tmp/flatpak-build \
+            flatpak/org.prismlauncher.PrismLauncher.yml
+
+      - name: Bundle flatpak
+        run: |
+          flatpak build-bundle /tmp/flatpak-repo PrismLauncher-Linux-x86_64.flatpak org.prismlauncher.PrismLauncher stable
+
+      - name: Upload flatpak
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: PrismLauncher-Linux-x86_64-flatpak
+          path: PrismLauncher-Linux-x86_64.flatpak
+          if-no-files-found: error
+
+      - name: Attest flatpak provenance
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/attest-build-provenance@8beda2b7ed98355c0e97c0a63bec38ae472e66c4 # v4.2.2
+        with:
+          subject-path: PrismLauncher-Linux-x86_64.flatpak
