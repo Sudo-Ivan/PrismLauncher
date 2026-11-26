@@ -133,7 +133,7 @@ jobs:
 
       - name: Attest build provenance (Linux)
         if: ${{ github.event_name != 'pull_request' && runner.os == 'Linux' }}
-        uses: actions/attest-build-provenance@8beda2b7ed98355c0e97c0a63bec38ae472e66c4 # v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: |
             PrismLauncher-*.AppImage
@@ -141,7 +141,7 @@ jobs:
 
       - name: Attest build provenance (Windows)
         if: ${{ github.event_name != 'pull_request' && runner.os == 'Windows' }}
-        uses: actions/attest-build-provenance@8beda2b7ed98355c0e97c0a63bec38ae472e66c4 # v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: |
             PrismLauncher-Windows-MSVC-*.zip
@@ -194,6 +194,6 @@ jobs:
 
       - name: Attest flatpak provenance
         if: ${{ github.event_name != 'pull_request' }}
-        uses: actions/attest-build-provenance@8beda2b7ed98355c0e97c0a63bec38ae472e66c4 # v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: PrismLauncher-Linux-x86_64.flatpak
