@@ -98,6 +98,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           gh release create "$VERSION" \
+            --repo "$GITHUB_REPOSITORY" \
             --title "PrismLauncher Offline $VERSION" \
             --generate-notes \
             --latest \
