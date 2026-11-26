@@ -18,7 +18,7 @@ Download a build from the [releases page](https://github.com/Sudo-Ivan/PrismLaun
 Linux builds are x86_64 only. The AppImage and portable tarball are self-contained. The Flatpak bundle can be installed with:
 
 ```sh
-flatpak install PrismLauncher-Linux-x86_64.flatpak
+flatpak install --user ./PrismLauncher-Linux-x86_64.flatpak
 ```
 
 Windows builds are x86_64 only. Use the installer or the portable zip.

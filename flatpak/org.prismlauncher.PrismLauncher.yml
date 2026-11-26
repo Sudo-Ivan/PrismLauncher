@@ -2,6 +2,8 @@ id: org.prismlauncher.PrismLauncher
 runtime: org.kde.Platform
 runtime-version: '6.10'
 sdk: org.kde.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.openjdk17
 command: prismlauncher
 finish-args:
   - --share=ipc
@@ -48,6 +50,11 @@ modules:
   - name: prismlauncher
     buildsystem: cmake-ninja
     builddir: true
+    build-options:
+      prepend-path: /usr/lib/sdk/openjdk17/bin
+      env:
+        JAVA_HOME: /usr/lib/sdk/openjdk17/jvm/openjdk-17
+        JAVA_COMPILER: /usr/lib/sdk/openjdk17/jvm/openjdk-17/bin/javac
     config-opts:
       - -DLauncher_BUILD_PLATFORM=flatpak
       - -DLauncher_ENABLE_JAVA_DOWNLOADER=ON

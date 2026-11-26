@@ -41,12 +41,12 @@ runs:
         vcvars-arch: ${{ inputs.vcvars-arch }}
 
     - name: Setup ccache
-      if: ${{ runner.os != 'Windows' && inputs.build-type == 'Debug' }}
+      if: ${{ inputs.build-type == 'Debug' }}
       uses: hendrikmuhs/ccache-action@d62db5f07c26379fc4b4e0916f098a92573c3b03 # v1.2.23
       with:
         variant: sccache
         max-size: 500M
-        create-symlink: true
+        create-symlink: ${{ runner.os != 'Windows' }}
         key: ${{ runner.os }}-${{ runner.arch }}-${{ inputs.artifact-name }}-sccache
 
     - name: Use ccache on debug builds
