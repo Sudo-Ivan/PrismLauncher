@@ -1,0 +1,45 @@
+{
+    "formatVersion": 1,
+    "uid": "org.lwjgl3",
+    "name": "LWJGL 3",
+    "version": "3.4.3",
+    "type": "release",
+    "releaseTime": "2026-01-01T00:00:00Z",
+    "volatile": true,
+    "order": 1,
+    "conflicts": [{ "uid": "org.lwjgl" }],
+    "libraries": [
+        {
+            "name": "org.lwjgl:lwjgl-freetype:3.4.3-mojang-2.15.0",
+            "downloads": {
+                "artifact": {
+                    "sha1": "134bc57b83e78a7f954a0f078093e319739d42ea",
+                    "size": 469281,
+                    "url": "https://mva.quad4.io/libraries/org/lwjgl/lwjgl-freetype/3.4.3-mojang-2.15.0/lwjgl-freetype-3.4.3-mojang-2.15.0.jar"
+                }
+            }
+        },
+        {
+            "name": "org.lwjgl:lwjgl-natives-linux:3.4.3",
+            "rules": [{ "action": "allow", "os": { "name": "linux" } }],
+            "downloads": {
+                "artifact": {
+                    "sha1": "2800e134537db1a175eba41c430b1018eddc48f0",
+                    "size": 137717,
+                    "url": "https://mva.quad4.io/libraries/org/lwjgl/lwjgl/3.4.3/lwjgl-3.4.3-natives-linux.jar"
+                }
+            }
+        },
+        {
+            "name": "org.lwjgl:lwjgl-natives-macos-arm64:3.4.3",
+            "rules": [{ "action": "allow", "os": { "name": "osx-arm64" } }],
+            "downloads": {
+                "artifact": {
+                    "sha1": "9e41227b9e0aca9510f3196d45b3c6dd4048bd78",
+                    "size": 54330,
+                    "url": "https://mva.quad4.io/libraries/org/lwjgl/lwjgl/3.4.3/lwjgl-3.4.3-natives-macos-arm64.jar"
+                }
+            }
+        }
+    ]
+}

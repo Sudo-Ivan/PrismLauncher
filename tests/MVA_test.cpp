@@ -174,6 +174,32 @@ class MVATest : public QObject {
         }));
     }
 
+    void test_lwjglDetailShape()
+    {
+        const auto source = QFINDTESTDATA("testdata/MVA/org.lwjgl3-3.4.3.json");
+        QVERIFY(!source.isEmpty());
+        const auto doc = Json::requireDocument(source);
+        if (!doc) {
+            QFAIL(qPrintable(doc.error()));
+        }
+
+        Meta::Version version("org.lwjgl3", "3.4.3");
+        const auto result = Meta::parseVersion(doc->object(), &version);
+        if (!result) {
+            QFAIL(qPrintable(result.error()));
+        }
+
+        const auto data = version.data();
+        QVERIFY(data);
+        QCOMPARE(data->libraries.size(), 3);
+        QVERIFY(std::any_of(data->libraries.begin(), data->libraries.end(), [](const LibraryPtr& lib) {
+            return lib->rawName().serialize() == "org.lwjgl:lwjgl-freetype:3.4.3-mojang-2.15.0";
+        }));
+        QVERIFY(std::any_of(data->libraries.begin(), data->libraries.end(), [](const LibraryPtr& lib) {
+            return lib->rawName().serialize() == "org.lwjgl:lwjgl-natives-linux:3.4.3";
+        }));
+    }
+
 };
 
 QTEST_GUILESS_MAIN(MVATest)

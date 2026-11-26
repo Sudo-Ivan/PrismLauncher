@@ -363,8 +363,14 @@ static bool getTrivialComponentChanges(const ComponentIndex& index, const Requir
         do {
             if (req.equalsVersion.isEmpty()) {
                 reqStr = QString("Req: %1").arg(req.uid);
-                if (index.contains(req.uid)) {
-                    decision = Decision::Met;
+                const auto& compIter = index.find(req.uid);
+                if (compIter != index.cend()) {
+                    auto& comp = (*compIter);
+                    if (comp->getVersion().isEmpty() && !req.suggests.isEmpty()) {
+                        decision = Decision::VersionNotSame;
+                    } else {
+                        decision = Decision::Met;
+                    }
                 } else {
                     toAdd.insert(req);
                     decision = Decision::Missing;
@@ -406,10 +412,15 @@ static bool getTrivialComponentChanges(const ComponentIndex& index, const Requir
                 qCDebug(instanceProfileResolveC) << reqStr << "Is missing and should be added at" << req.indexOfFirstDependee;
                 toAdd.insert(req);
                 break;
-            case Decision::VersionNotSame:
+            case Decision::VersionNotSame: {
                 qCDebug(instanceProfileResolveC) << reqStr << "already has different version that can be changed.";
-                toChange.insert(req);
+                RequireEx resolved = req;
+                if (resolved.equalsVersion.isEmpty()) {
+                    resolved.equalsVersion = resolved.suggests;
+                }
+                toChange.insert(resolved);
                 break;
+            }
             case Decision::LockedVersionNotSame:
                 qCDebug(instanceProfileResolveC) << reqStr << "already has different version that cannot be changed.";
                 succeeded = false;

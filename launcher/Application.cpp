@@ -654,9 +654,16 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         m_settings->registerSetting("MenuBarInsteadOfToolBar", false);
 
         m_settings->registerSetting("NumberOfConcurrentTasks", 10);
-        m_settings->registerSetting("NumberOfConcurrentDownloads", 6);
+        m_settings->registerSetting("NumberOfConcurrentDownloads", 12);
         m_settings->registerSetting("NetworkRetryLimit", 2);
         m_settings->registerSetting("RequestTimeout", 60);
+        m_settings->registerSetting("ConcurrentDownloads12Migration", false);
+        if (!m_settings->get("ConcurrentDownloads12Migration").toBool()) {
+            if (m_settings->get("NumberOfConcurrentDownloads").toInt() == 6) {
+                m_settings->set("NumberOfConcurrentDownloads", 12);
+            }
+            m_settings->set("ConcurrentDownloads12Migration", true);
+        }
 
         QString defaultMonospace;
         int defaultSize = 11;
