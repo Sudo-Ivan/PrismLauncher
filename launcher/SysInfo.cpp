@@ -93,9 +93,9 @@ int defaultMaxJvmMem()
     const uint64_t halfSystemMemory = totalRAM / 2;
 
     if (totalRAM <= 2048) {
-        return std::max<uint64_t>(512, halfSystemMemory);
+        return static_cast<int>(std::max<uint64_t>(512, halfSystemMemory));
     }
-    return std::clamp<uint64_t>(halfSystemMemory, 1024, 4096);
+    return static_cast<int>(std::clamp<uint64_t>(halfSystemMemory, 1024, 4096));
 }
 
 QString getSupportedJavaArchitecture()
