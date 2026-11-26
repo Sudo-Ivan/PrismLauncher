@@ -128,7 +128,7 @@ jobs:
       draft-release: false
   publish_release:
     name: Publish release
-    needs: slsa_provenance
+    needs: [create_release, slsa_provenance]
     permissions:
       contents: write
     runs-on: ubuntu-24.04
