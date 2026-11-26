@@ -75,10 +75,10 @@ runs:
       run: |
         cmake --install ${{ env.BUILD_DIR }} --config ${INPUTS_BUILD_TYPE} --prefix ${{ env.INSTALL_APPIMAGE_DIR }}
 
-        if [ '${INPUTS_GPG_PRIVATE_KEY_ID}' != '' ]; then
+        if [ "${INPUTS_GPG_PRIVATE_KEY_ID}" != "" ]; then
           echo "$GPG_PRIVATE_KEY" > privkey.asc
           gpg --import privkey.asc
-          gpg --export --armor ${INPUTS_GPG_PRIVATE_KEY_ID} > pubkey.asc
+          gpg --export --armor "${INPUTS_GPG_PRIVATE_KEY_ID}" > pubkey.asc
         else
           echo ":warning: Skipped code signing for Linux AppImage, as gpg key was not present." >> $GITHUB_STEP_SUMMARY
         fi

@@ -175,6 +175,7 @@ jobs:
       - name: Build flatpak
         run: |
           flatpak-builder --user --disable-rofiles-fuse --force-clean \
+            --default-branch=stable \
             --state-dir=/tmp/flatpak-state \
             --repo=/tmp/flatpak-repo \
             /tmp/flatpak-build \
