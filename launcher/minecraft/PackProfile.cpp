@@ -367,7 +367,8 @@ void PackProfile::resolve(Net::Mode netmode)
     connect(updateTask, &ComponentUpdateTask::succeeded, this, &PackProfile::updateSucceeded);
     connect(updateTask, &ComponentUpdateTask::failed, this, &PackProfile::updateFailed);
     connect(updateTask, &ComponentUpdateTask::aborted, this, [this] { updateFailed(tr("Aborted")); });
-    d->m_updateTask->start();
+    auto task = d->m_updateTask;
+    QTimer::singleShot(0, this, [task] { task->start(); });
 }
 
 void PackProfile::updateSucceeded()

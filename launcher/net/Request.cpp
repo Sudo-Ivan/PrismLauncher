@@ -46,6 +46,7 @@
 #include <QLocale>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QRegularExpression>
 #include <QUrl>
 #include <cstdint>
 #include <memory>
@@ -85,6 +86,54 @@ auto logCatForMethod(HttpMethod method) -> Request::LogCatFunc
     return taskNetLogC;
 }
 }  // namespace
+
+QUrl upstreamFallbackUrl(const QUrl& url)
+{
+    if (!url.scheme().startsWith("http")) {
+        return {};
+    }
+    const auto path = url.path();
+    QString host;
+    QString upstreamPath;
+    const QString librariesPrefix = "/libraries/";
+    const QString assetsPrefix = "/assets/objects/";
+    const QString fabricPrefix = "/maven/fabricmc/";
+    if (path.startsWith(librariesPrefix)) {
+        host = "libraries.minecraft.net";
+        upstreamPath = path.mid(librariesPrefix.size() - 1);
+    } else if (path.startsWith(assetsPrefix)) {
+        host = "resources.download.minecraft.net";
+        upstreamPath = path.mid(assetsPrefix.size() - 1);
+    } else if (path.startsWith(fabricPrefix)) {
+        host = "maven.fabricmc.net";
+        upstreamPath = path.mid(fabricPrefix.size() - 1);
+    } else {
+        static const QRegularExpression temurinPath("^/java/temurin/(\\d+)/[^/]+/([^/]+)$");
+        static const QRegularExpression temurinName("^OpenJDK\\d+U-(?:jdk|jre)_.+_hotspot_(.+)\\.(?:tar\\.gz|zip)$");
+        const auto pathMatch = temurinPath.match(path);
+        if (!pathMatch.hasMatch()) {
+            return {};
+        }
+        const auto fileName = pathMatch.captured(2);
+        const auto nameMatch = temurinName.match(fileName);
+        if (!nameMatch.hasMatch()) {
+            return {};
+        }
+        auto version = nameMatch.captured(1);
+        const auto buildSeparator = version.lastIndexOf('_');
+        if (buildSeparator < 0) {
+            return {};
+        }
+        version.replace(buildSeparator, 1, "%2B");
+        return QUrl("https://github.com/adoptium/temurin" + pathMatch.captured(1) + "-binaries/releases/download/jdk-" + version + "/" +
+                    fileName);
+    }
+    QUrl out;
+    out.setScheme("https");
+    out.setHost(host);
+    out.setPath(upstreamPath);
+    return out;
+}
 
 Request::Request() : Request(Spec{}) {}
 
@@ -377,6 +426,9 @@ void Request::downloadFinished()
     }
     if (m_state == State::Failed) {
         qCDebug(m_logCat) << getUid().toString() << "Request failed in previous step:" << m_url.toString();
+        if (tryUpstreamFallback()) {
+            return;
+        }
         m_sink->abort();
         m_failReason = m_reply->errorString();
         emit failed(m_reply->errorString());
@@ -398,6 +450,9 @@ void Request::downloadFinished()
         auto result = m_sink->write(data);
         if (!result) {
             qCDebug(m_logCat) << getUid().toString() << "Request failed to write:" << m_url.toString();
+            if (tryUpstreamFallback()) {
+                return;
+            }
             m_sink->abort();
             emitFailed(result.error());
             return;
@@ -408,6 +463,9 @@ void Request::downloadFinished()
     auto result = m_sink->finalize(*m_reply);
     if (!result) {
         qCDebug(m_logCat) << getUid().toString() << "Request failed to finalize:" << m_url.toString();
+        if (tryUpstreamFallback()) {
+            return;
+        }
         m_sink->abort();
         emitFailed(result.error());
         return;
@@ -434,6 +492,29 @@ void Request::downloadReadyRead()
     } else {
         qCCritical(m_logCat) << getUid().toString() << "Cannot write download data! illegal status" << m_status;
     }
+}
+
+bool Request::tryUpstreamFallback()
+{
+    if (m_usedUpstreamFallback || m_httpMethod != HttpMethod::Get) {
+        return false;
+    }
+    const auto fallback = upstreamFallbackUrl(m_url);
+    if (!fallback.isValid() || fallback == m_url) {
+        return false;
+    }
+
+    m_usedUpstreamFallback = true;
+    qCWarning(m_logCat) << getUid().toString() << "Retrying" << m_url.toString() << "from upstream mirror" << fallback.toString();
+    m_sink->abort();
+    m_url = fallback;
+    m_reply.reset();
+    m_errorResponse.clear();
+    m_redirectCount = 0;
+    m_failReason.clear();
+    m_state = State::Running;
+    executeTask();
+    return true;
 }
 
 auto Request::abort() -> bool

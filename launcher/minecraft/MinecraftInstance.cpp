@@ -1192,9 +1192,7 @@ LaunchTask* MinecraftInstance::createLaunchTask(AuthSessionPtr session, Minecraf
 
     // load meta
     {
-        auto offline = session->launchMode == LaunchMode::Offline;
-        auto mode = offline ? Net::Mode::Offline : Net::Mode::Online;
-        process->appendStep(makeShared<TaskStepWrapper>(pptr, makeShared<MinecraftLoadAndCheck>(this, mode, offline)));
+        process->appendStep(makeShared<TaskStepWrapper>(pptr, makeShared<MinecraftLoadAndCheck>(this, Net::Mode::Online, true)));
     }
 
     // check java

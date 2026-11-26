@@ -7,7 +7,8 @@ A fork of [Prism Launcher](https://github.com/PrismLauncher/PrismLauncher) that 
 - Offline accounts can be added from the account manager or the first-run wizard without linking a Microsoft account first.
 - Offline accounts launch the full game. The launcher no longer falls back to demo mode or asks for a Microsoft account that owns Minecraft.
 - Version downloads and instance updates work without an account.
-- Game metadata, libraries, assets, and Java runtimes use [mva.quad4.io](https://mva.quad4.io) by default. Each server can be changed in the API settings.
+- Game metadata, libraries, assets, and Java runtimes use [mva.quad4.io](https://mva.quad4.io) by default. Each server can be changed in the API settings. If the mirror fails, the launcher retries the upstream metadata and file servers.
+- Offline account launches refresh metadata when the network is available. This repairs missing components such as LWJGL, while cached metadata remains available as a fallback.
 - Instance export can include the libraries, assets, metadata, and launcher-managed Java runtime needed to play offline. Importing one of these archives restores those shared files before creating the instance.
 - Launches reuse existing verified libraries and download only missing files when possible.
 - Java memory defaults scale with system memory, up to 4 GiB.

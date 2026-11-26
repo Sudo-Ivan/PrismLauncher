@@ -33,10 +33,15 @@ void MinecraftLoadAndCheck::executeTask()
     }
     connect(m_task.get(), &Task::succeeded, this, &MinecraftLoadAndCheck::emitSucceeded);
     connect(m_task.get(), &Task::failed, this, [this](const QString& reason) {
-        if (m_netmode == Net::Mode::Offline && m_allowOnlineFallback) {
+        if (m_allowOnlineFallback) {
             m_allowOnlineFallback = false;
-            m_netmode = Net::Mode::Online;
-            logWarning(tr("Offline metadata is incomplete. Trying to download it."));
+            if (m_netmode == Net::Mode::Online) {
+                m_netmode = Net::Mode::Offline;
+                logWarning(tr("Online metadata is unavailable. Trying cached metadata."));
+            } else {
+                m_netmode = Net::Mode::Online;
+                logWarning(tr("Offline metadata is incomplete. Trying to download it."));
+            }
             QTimer::singleShot(0, this, [this] {
                 if (isRunning()) {
                     executeTask();

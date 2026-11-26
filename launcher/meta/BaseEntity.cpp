@@ -17,6 +17,8 @@
 #include <expected>
 #include <utility>
 
+#include <QTimer>
+
 #include "FileSystem.h"
 #include "Json.h"
 #include "Result.h"
@@ -63,6 +65,11 @@ QUrl BaseEntity::url() const
         return QUrl(BuildConfig.META_URL).resolved(localFilename());
     }
     return QUrl(metaOverride).resolved(localFilename());
+}
+
+QUrl BaseEntity::upstreamUrl() const
+{
+    return QUrl("https://meta.prismlauncher.org/v1/").resolved(localFilename());
 }
 
 Task::Ptr BaseEntity::loadTask(Net::Mode loadType, bool forceReload)
@@ -142,8 +149,13 @@ void BaseEntityLoadTask::executeTask()
         emitSucceeded();
         return;
     }
+    startRemoteLoad(false);
+}
+
+void BaseEntityLoadTask::startRemoteLoad(bool useUpstreamFallback)
+{
     m_task.reset(new NetJob(QObject::tr("Download of meta file %1").arg(m_entity->localFilename()), APPLICATION->network()));
-    auto url = m_entity->url();
+    auto url = useUpstreamFallback ? m_entity->upstreamUrl() : m_entity->url();
     auto entry = APPLICATION->metacache()->resolveEntry("meta", m_entity->localFilename());
     if (m_forceReload) {
         // clear validators so manual refreshes fetch a fresh body
@@ -156,13 +168,22 @@ void BaseEntityLoadTask::executeTask()
      * The validator parses the file and loads it into the object.
      * If that fails, the file is not written to storage.
      */
-    if (!m_entity->m_sha256.isEmpty()) {
+    if (!useUpstreamFallback && !m_entity->m_sha256.isEmpty()) {
         dl->addValidator(new Net::ChecksumValidator(QCryptographicHash::Algorithm::Sha256, m_entity->m_sha256));
     }
     dl->addValidator(new ParsingValidator(m_entity));
     m_task->addNetAction(dl);
     m_task->setAskRetry(false);
-    connect(m_task.get(), &Task::failed, this, &BaseEntityLoadTask::emitFailed);
+    connect(m_task.get(), &Task::failed, this, [this, useUpstreamFallback](const QString& reason) {
+        const auto primaryUrl = m_entity->url();
+        const auto fallbackUrl = m_entity->upstreamUrl();
+        if (!useUpstreamFallback && fallbackUrl != primaryUrl) {
+            qWarning() << "Failed to download metadata from" << primaryUrl << ":" << reason << "; retrying from" << fallbackUrl;
+            QTimer::singleShot(0, this, [this] { startRemoteLoad(true); });
+            return;
+        }
+        emitFailed(reason);
+    });
     connect(m_task.get(), &Task::succeeded, this, [this]() {
         m_entity->m_loadStatus = BaseEntity::LoadStatus::Remote;
         m_entity->m_fileSha256 = m_entity->m_sha256;

@@ -37,6 +37,7 @@ class BaseEntity {
 
     virtual QString localFilename() const = 0;
     virtual QUrl url() const;
+    QUrl upstreamUrl() const;
     virtual bool isLoaded() const;
     LoadStatus status() const;
 
@@ -67,6 +68,9 @@ class BaseEntityLoadTask : public Task {
 
    protected:
     void executeTask() override;
+
+   private:
+    void startRemoteLoad(bool useUpstreamFallback);
 
    private:
     BaseEntity* m_entity;

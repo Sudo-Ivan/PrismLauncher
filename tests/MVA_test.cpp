@@ -10,6 +10,7 @@
 #include <meta/JsonFormat.h>
 #include <meta/Version.h>
 #include <meta/VersionList.h>
+#include <net/Request.h>
 
 class MVATest : public QObject {
     Q_OBJECT
@@ -87,6 +88,9 @@ class MVATest : public QObject {
         QVERIFY(data->mainJar);
         QCOMPARE(data->mainJar->rawName().serialize(), QString("com.mojang:minecraft:1.21.1:client"));
         QVERIFY(!data->libraries.isEmpty());
+        QVERIFY(std::any_of(data->m_requires.begin(), data->m_requires.end(), [](const Meta::Require& req) {
+            return req.uid == "org.lwjgl3" && req.suggests == "3.3.3";
+        }));
     }
     void test_javaRuntimeDetailShape()
     {
@@ -172,6 +176,27 @@ class MVATest : public QObject {
         QVERIFY(std::any_of(data->m_requires.begin(), data->m_requires.end(), [](const Meta::Require& req) {
             return req.uid == "net.minecraft" && req.equalsVersion == "1.21.1";
         }));
+    }
+
+    void test_upstreamFallbackMappings()
+    {
+        QCOMPARE(Net::upstreamFallbackUrl(QUrl("https://mva.quad4.io/libraries/org/lwjgl/lwjgl/3.3.3/lwjgl-3.3.3.jar")),
+                 QUrl("https://libraries.minecraft.net/org/lwjgl/lwjgl/3.3.3/lwjgl-3.3.3.jar"));
+        QCOMPARE(Net::upstreamFallbackUrl(QUrl("https://mva.quad4.io/assets/objects/06/0637a2db2fdca54a903ac4a07c244a8d95f6b6f0")),
+                 QUrl("https://resources.download.minecraft.net/06/0637a2db2fdca54a903ac4a07c244a8d95f6b6f0"));
+        QCOMPARE(Net::upstreamFallbackUrl(QUrl("https://mva.quad4.io/maven/fabricmc/net/fabricmc/fabric-loader/0.18.4/fabric-loader-0.18.4.jar")),
+                 QUrl("https://maven.fabricmc.net/net/fabricmc/fabric-loader/0.18.4/fabric-loader-0.18.4.jar"));
+        QCOMPARE(Net::upstreamFallbackUrl(QUrl(
+                     "https://mva.quad4.io/java/temurin/21/linux-x64/OpenJDK21U-jdk_x64_linux_hotspot_21.0.13_9.tar.gz")),
+                 QUrl("https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/"
+                      "OpenJDK21U-jdk_x64_linux_hotspot_21.0.13_9.tar.gz"));
+        QVERIFY(!Net::upstreamFallbackUrl(QUrl("https://mva.quad4.io/meta/v1/org.lwjgl3/3.3.3.json")).isValid());
+    }
+
+    void test_metadataUpstreamFallbackUrl()
+    {
+        const Meta::Version version("org.lwjgl3", "3.3.3");
+        QCOMPARE(version.upstreamUrl(), QUrl("https://meta.prismlauncher.org/v1/org.lwjgl3/3.3.3.json"));
     }
 
     void test_lwjglDetailShape()

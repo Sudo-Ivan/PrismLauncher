@@ -63,6 +63,8 @@ class QHttpMultiPart;
 
 namespace Net {
 
+QUrl upstreamFallbackUrl(const QUrl& url);
+
 enum class HttpMethodValue : std::uint8_t {
     Get,
     Post,
@@ -151,6 +153,7 @@ class Request : public Task {
 
    private:
     auto handleRedirect() -> bool;
+    bool tryUpstreamFallback();
     void handleAutoRetry(int64_t delay);
     virtual QNetworkReply* getReply(QNetworkRequest&);
 
@@ -191,6 +194,7 @@ class Request : public Task {
     QTimer m_retryTimer;
 
     int m_redirectCount = 0;
+    bool m_usedUpstreamFallback = false;
 
     HttpMethod m_httpMethod = HttpMethod::Get;
     PostData m_postData;
