@@ -79,11 +79,12 @@ jobs:
 
           tar --exclude='.git' -czf "PrismLauncher-$VERSION.tar.gz" "PrismLauncher-$VERSION"
 
+          cp "PrismLauncher-$VERSION/.github/release-notes.md" release-notes.md
           rm -rf "PrismLauncher-$VERSION"
           find . -maxdepth 1 -type f -name 'PrismLauncher-*' -printf '%f\n' | sort | xargs sha256sum > SHA256SUMS
 
       - name: Attest release provenance
-        uses: actions/attest-build-provenance@8beda2b7ed98355c0e97c0a63bec38ae472e66c4 # v4.2.2
+        uses: actions/attest-build-provenance@8beda2b7ed98355c0e97c0a63bec38ae472e66c4 # v4
         with:
           subject-checksums: SHA256SUMS
 
@@ -100,14 +101,7 @@ jobs:
           gh release create "$VERSION" \
             --repo "$GITHUB_REPOSITORY" \
             --title "PrismLauncher Offline $VERSION" \
-            --notes "Offline account support and fork-only builds.
-
-- Offline accounts can be added and launched without a Microsoft account.
-- Version downloads work without an account.
-- Builds for Windows x64 and Linux x64.
-- Assets: AppImage, Flatpak, portable tarball, Windows zip and installer.
-
-This is an unofficial fork. Not affiliated with Prism Launcher, Mojang, or Microsoft." \
+            --notes-file release-notes.md \
             --latest \
             PrismLauncher-Linux-x86_64.AppImage \
             PrismLauncher-Linux-x86_64.AppImage.zsync \
