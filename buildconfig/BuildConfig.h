@@ -36,6 +36,9 @@
  */
 
 #pragma once
+#ifndef PRISM_BUILDCONFIG_H
+#define PRISM_BUILDCONFIG_H
+
 #include <QList>
 #include <QString>
 
@@ -173,8 +176,8 @@ class Config {
     QString DISCORD_URL;
     QString SUBREDDIT_URL;
 
-    QString DEFAULT_RESOURCE_BASE = "https://resources.download.minecraft.net/";
-    QString LIBRARY_BASE = "https://libraries.minecraft.net/";
+    QString DEFAULT_RESOURCE_BASE = "https://mva.quad4.io/assets/objects/";
+    QString LIBRARY_BASE = "https://mva.quad4.io/libraries/";
     QString IMGUR_BASE_URL = "https://api.imgur.com/3/";
     QString LEGACY_FMLLIBS_BASE_URL;
     QString TRANSLATION_FILES_URL;
@@ -221,3 +224,5 @@ class Config {
 };
 
 extern const Config BuildConfig;
+
+#endif  // PRISM_BUILDCONFIG_H

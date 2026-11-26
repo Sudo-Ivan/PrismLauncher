@@ -45,6 +45,8 @@ set(CORE_SOURCES
     InstanceCopyTask.cpp
     InstanceImportTask.h
     InstanceImportTask.cpp
+    OfflineBundle.h
+    OfflineBundle.cpp
 
     # Resource downloading task
     ResourceDownloadTask.h

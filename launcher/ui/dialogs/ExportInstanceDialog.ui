@@ -31,6 +31,19 @@
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="includeOfflineFilesCheckBox">
+     <property name="toolTip">
+      <string>Copies the libraries, assets, metadata, and launcher-managed Java runtime used by this instance into the archive. This can make the archive much larger. The files match this computer's operating system and architecture.</string>
+     </property>
+     <property name="text">
+      <string>Include files needed to play offline</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>

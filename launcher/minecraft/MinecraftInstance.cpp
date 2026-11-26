@@ -1192,8 +1192,9 @@ LaunchTask* MinecraftInstance::createLaunchTask(AuthSessionPtr session, Minecraf
 
     // load meta
     {
-        auto mode = session->launchMode != LaunchMode::Offline ? Net::Mode::Online : Net::Mode::Offline;
-        process->appendStep(makeShared<TaskStepWrapper>(pptr, makeShared<MinecraftLoadAndCheck>(this, mode)));
+        auto offline = session->launchMode == LaunchMode::Offline;
+        auto mode = offline ? Net::Mode::Offline : Net::Mode::Online;
+        process->appendStep(makeShared<TaskStepWrapper>(pptr, makeShared<MinecraftLoadAndCheck>(this, mode, offline)));
     }
 
     // check java
@@ -1214,10 +1215,15 @@ LaunchTask* MinecraftInstance::createLaunchTask(AuthSessionPtr session, Minecraf
     // if we aren't in offline mode
     if (session->launchMode != LaunchMode::Offline) {
         process->appendStep(makeShared<ClaimAccount>(pptr, session));
-        for (auto t : createUpdateTask()) {
-            process->appendStep(makeShared<TaskStepWrapper>(pptr, t));
-        }
-    } else {
+    }
+
+    // Offline accounts still need game files. These tasks use existing verified files when they
+    // are present and only download what is missing.
+    for (auto t : createUpdateTask()) {
+        process->appendStep(makeShared<TaskStepWrapper>(pptr, t));
+    }
+
+    if (session->launchMode == LaunchMode::Offline) {
         process->appendStep(makeShared<EnsureOfflineLibraries>(pptr, this));
     }
 

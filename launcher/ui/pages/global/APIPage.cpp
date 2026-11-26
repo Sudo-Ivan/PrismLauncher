@@ -76,12 +76,14 @@ APIPage::APIPage(QWidget* parent) : QWidget(parent), ui(new Ui::APIPage)
     // NOTE: this allows http://, but we replace that with https later anyway
     ui->metaURL->setValidator(new QRegularExpressionValidator(s_validUrlRegExp, ui->metaURL));
     ui->resourceURL->setValidator(new QRegularExpressionValidator(s_validUrlRegExp, ui->resourceURL));
+    ui->libraryURL->setValidator(new QRegularExpressionValidator(s_validUrlRegExp, ui->libraryURL));
     ui->baseURLEntry->setValidator(new QRegularExpressionValidator(s_validUrlRegExp, ui->baseURLEntry));
     ui->legacyFMLLibsURL->setValidator(new QRegularExpressionValidator(s_validUrlRegExp, ui->legacyFMLLibsURL));
     ui->msaClientID->setValidator(new QRegularExpressionValidator(s_validMSAClientID, ui->msaClientID));
 
     ui->metaURL->setPlaceholderText(BuildConfig.META_URL);
     ui->resourceURL->setPlaceholderText(BuildConfig.DEFAULT_RESOURCE_BASE);
+    ui->libraryURL->setPlaceholderText(BuildConfig.LIBRARY_BASE);
     ui->legacyFMLLibsURL->setPlaceholderText(BuildConfig.LEGACY_FMLLIBS_BASE_URL);
     ui->userAgentLineEdit->setPlaceholderText(BuildConfig.USER_AGENT);
 
@@ -145,6 +147,8 @@ void APIPage::loadSettings()
     ui->metaURL->setText(metaURL);
     QString resourceURL = s->get("ResourceURLOverride").toString();
     ui->resourceURL->setText(resourceURL);
+    QString libraryURL = s->get("LibraryURLOverride").toString();
+    ui->libraryURL->setText(libraryURL);
     QString fmlLibsURL = s->get("LegacyFMLLibsURLOverride").toString();
     ui->legacyFMLLibsURL->setText(fmlLibsURL);
     QString flameKey = s->get("FlameKeyOverride").toString();
@@ -167,6 +171,7 @@ void APIPage::applySettings()
     s->set("MSAClientIDOverride", msaClientID);
     QUrl metaURL(ui->metaURL->text());
     QUrl resourceURL(ui->resourceURL->text());
+    QUrl libraryURL(ui->libraryURL->text());
     QUrl fmlLibsURL(ui->legacyFMLLibsURL->text());
 
     auto addRequiredTrailingSlash = [](QUrl& url) {
@@ -178,6 +183,7 @@ void APIPage::applySettings()
     };
     addRequiredTrailingSlash(metaURL);
     addRequiredTrailingSlash(resourceURL);
+    addRequiredTrailingSlash(libraryURL);
     addRequiredTrailingSlash(fmlLibsURL);
 
     auto isLocalhost = [](const QUrl& url) { return url.host() == "localhost" || url.host() == "127.0.0.1" || url.host() == "::1"; };
@@ -190,11 +196,13 @@ void APIPage::applySettings()
 
     upgradeToHTTPS(metaURL);
     upgradeToHTTPS(resourceURL);
+    upgradeToHTTPS(libraryURL);
     upgradeToHTTPS(fmlLibsURL);
 
     s->set("FallbackMRBlockedMods", ui->FallbackMRBlockedMods->checkState());
     s->set("MetaURLOverride", metaURL.toString());
     s->set("ResourceURLOverride", resourceURL.toString());
+    s->set("LibraryURLOverride", libraryURL.toString());
     s->set("LegacyFMLLibsURLOverride", fmlLibsURL.toString());
     QString flameKey = ui->flameKey->text();
     s->set("FlameKeyOverride", flameKey);

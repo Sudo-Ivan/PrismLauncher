@@ -162,6 +162,32 @@
         </widget>
        </item>
        <item>
+        <widget class="QGroupBox" name="groupBox_libraries">
+         <property name="title">
+          <string>Libraries Server</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_libraries">
+          <item>
+           <widget class="QLabel" name="librariesLabel">
+            <property name="text">
+             <string>You can set this to another server if you have problems with downloading libraries.</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="libraryURL">
+            <property name="placeholderText">
+             <string>Use Default</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <widget class="QGroupBox" name="groupBox_fmllibs">
          <property name="title">
           <string>Legacy FML Libraries Server</string>

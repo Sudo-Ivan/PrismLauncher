@@ -52,6 +52,7 @@ class InstanceImportTask : public InstanceTask {
     void executeTask() override;
 
    private:
+    void processExtractedPack();
     void processMultiMC();
     void processTechnic();
     void processFlame();

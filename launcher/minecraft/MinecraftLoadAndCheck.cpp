@@ -3,7 +3,11 @@
 #include "MinecraftInstance.h"
 #include "PackProfile.h"
 
-MinecraftLoadAndCheck::MinecraftLoadAndCheck(MinecraftInstance* inst, Net::Mode netmode) : m_inst(inst), m_netmode(netmode) {}
+#include <QTimer>
+
+MinecraftLoadAndCheck::MinecraftLoadAndCheck(MinecraftInstance* inst, Net::Mode netmode, bool allowOnlineFallback)
+    : m_inst(inst), m_netmode(netmode), m_allowOnlineFallback(allowOnlineFallback)
+{}
 
 void MinecraftLoadAndCheck::executeTask()
 {
@@ -28,7 +32,20 @@ void MinecraftLoadAndCheck::executeTask()
         return;
     }
     connect(m_task.get(), &Task::succeeded, this, &MinecraftLoadAndCheck::emitSucceeded);
-    connect(m_task.get(), &Task::failed, this, &MinecraftLoadAndCheck::emitFailed);
+    connect(m_task.get(), &Task::failed, this, [this](const QString& reason) {
+        if (m_netmode == Net::Mode::Offline && m_allowOnlineFallback) {
+            m_allowOnlineFallback = false;
+            m_netmode = Net::Mode::Online;
+            logWarning(tr("Offline metadata is incomplete. Trying to download it."));
+            QTimer::singleShot(0, this, [this] {
+                if (isRunning()) {
+                    executeTask();
+                }
+            });
+            return;
+        }
+        emitFailed(reason);
+    });
     connect(m_task.get(), &Task::aborted, this, &MinecraftLoadAndCheck::emitAborted);
     propagateFromOther(m_task.get());
 }

@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <QCryptographicHash>
 #include <QMap>
 #include <QString>
 #include <QTimer>
@@ -113,6 +114,9 @@ class HttpMetaCache : public QObject {
 
     // add a previously resolved stale entry
     auto updateEntry(MetaEntryPtr stale_entry) -> bool;
+
+    // validate an existing local file and adopt it as a current cache entry
+    auto validateLocalFile(MetaEntryPtr entry, QCryptographicHash::Algorithm hashAlgorithm, const QString& expectedHash, bool eternal) -> bool;
 
     // evict selected entry from cache
     auto evictEntry(MetaEntryPtr entry) -> bool;

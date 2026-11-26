@@ -25,7 +25,7 @@ namespace MMCZip {
 void ExportToZipTask::executeTask()
 {
     setStatus("Adding files...");
-    setProgress(0, m_files.length());
+    setProgress(0, m_files.length() + m_extraSourceFiles.size());
     m_buildZipFuture = QtConcurrent::run(QThreadPool::globalInstance(), [this]() { return exportZip(); });
     connect(&m_buildZipWatcher, &QFutureWatcher<Result<>>::finished, this, &ExportToZipTask::finish);
     m_buildZipWatcher.setFuture(m_buildZipFuture);
@@ -45,6 +45,16 @@ auto ExportToZipTask::exportZip() -> Result<>
             return {};
         if (const auto result = m_output.addFile(fileName, m_extraFiles[fileName]); !result) {
             return std::unexpected(tr("Could not add %1: %2").arg(fileName, result.error()));
+        }
+    }
+
+    for (auto it = m_extraSourceFiles.constBegin(); it != m_extraSourceFiles.constEnd(); ++it) {
+        if (m_buildZipFuture.isCanceled())
+            return {};
+        setStatus("Compressing: " + it.key());
+        setProgress(m_progress + 1, m_progressTotal);
+        if (const auto result = m_output.addFile(it.value(), it.key()); !result) {
+            return std::unexpected(tr("Could not add %1: %2").arg(it.key(), result.error()));
         }
     }
 

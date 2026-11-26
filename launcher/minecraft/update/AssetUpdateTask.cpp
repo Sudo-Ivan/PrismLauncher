@@ -11,6 +11,8 @@
 
 #include "net/ApiRequest.h"
 
+#include <QCryptographicHash>
+
 AssetUpdateTask::AssetUpdateTask(MinecraftInstance* inst)
 {
     m_inst = inst;
@@ -31,7 +33,12 @@ void AssetUpdateTask::executeTask()
     entry->setStale(true);
     auto hexSha1 = assets->sha1.toLatin1();
     qDebug() << "Asset index SHA1:" << hexSha1;
-    auto dl = Net::ApiRequest::makeCached(indexUrl, entry);
+    if (metacache->validateLocalFile(entry, QCryptographicHash::Sha1, assets->sha1, true)) {
+        qDebug() << "Using existing asset index for" << m_inst->name();
+        assetIndexFinished();
+        return;
+    }
+    auto dl = Net::ApiRequest::makeCached(indexUrl, entry, Net::Request::Option::MakeEternal);
     dl->addValidator(new Net::ChecksumValidator(QCryptographicHash::Sha1, assets->sha1));
     job->addNetAction(dl);
 

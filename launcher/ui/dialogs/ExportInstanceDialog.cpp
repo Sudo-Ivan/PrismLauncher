@@ -58,7 +58,9 @@
 #include <QStack>
 #include <functional>
 #include "Application.h"
+#include "OfflineBundle.h"
 #include "SeparatorPrefixTree.h"
+#include "minecraft/MinecraftInstance.h"
 
 ExportInstanceDialog::ExportInstanceDialog(BaseInstance* instance, QWidget* parent)
     : QDialog(parent), m_ui(new Ui::ExportInstanceDialog), m_instance(instance)
@@ -90,6 +92,11 @@ ExportInstanceDialog::ExportInstanceDialog(BaseInstance* instance, QWidget* pare
 
     m_ui->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
     m_ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));
+
+    if (!qobject_cast<MinecraftInstance*>(instance)) {
+        m_ui->includeOfflineFilesCheckBox->setChecked(false);
+        m_ui->includeOfflineFilesCheckBox->setEnabled(false);
+    }
 }
 
 ExportInstanceDialog::~ExportInstanceDialog()
@@ -152,6 +159,38 @@ void ExportInstanceDialog::doExport()
     }
 
     auto task = makeShared<MMCZip::ExportToZipTask>(output, m_instance->instanceRoot(), files, "", true);
+
+    if (m_ui->includeOfflineFilesCheckBox->isChecked()) {
+        auto* minecraftInstance = qobject_cast<MinecraftInstance*>(m_instance);
+        auto collectionResult = OfflineBundle::collectFiles(minecraftInstance);
+        if (!collectionResult) {
+            QMessageBox::warning(this, tr("Error"), tr("Unable to collect offline runtime files: %1").arg(collectionResult.error()));
+            QDialog::done(QDialog::Rejected);
+            return;
+        }
+
+        auto collection = collectionResult.value();
+        if (!collection.missing.isEmpty()) {
+            const auto missingCount = collection.missing.size();
+            const auto text = tr("This instance is missing %1 runtime files. The archive will not contain everything needed for offline play.\n\n"
+                                 "Launch the instance once while online, then export it again.\n\n"
+                                 "Export anyway?")
+                                  .arg(missingCount);
+            const auto answer = QMessageBox::question(this, tr("Missing runtime files"), text, QMessageBox::Yes | QMessageBox::No,
+                                                      QMessageBox::No);
+            if (answer != QMessageBox::Yes) {
+                QDialog::done(QDialog::Rejected);
+                return;
+            }
+        }
+
+        const QString bundleFilesPrefix = QString("%1/%2/").arg(OfflineBundle::DirectoryName, OfflineBundle::FilesDirectoryName);
+        for (const auto& file : collection.files) {
+            task->addExtraSourceFile(file.source, bundleFilesPrefix + file.relativePath);
+        }
+        task->addExtraFile(QString("%1/%2").arg(OfflineBundle::DirectoryName, OfflineBundle::ManifestFileName),
+                           OfflineBundle::createManifest(collection));
+    }
 
     connect(task.get(), &Task::failed, this,
             [this, output](QString reason) { CustomMessageBox::selectable(this, tr("Error"), reason, QMessageBox::Critical)->show(); });

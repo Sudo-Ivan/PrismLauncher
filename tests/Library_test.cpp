@@ -245,7 +245,7 @@ class LibraryTest : public QObject {
             auto dls = test.value()->getDownloads(r, cache.get(), failedFiles, QString());
             QCOMPARE(dls.size(), 1);
             QCOMPARE(failedFiles, {});
-            QCOMPARE(dls[0]->url(), QUrl("https://libraries.minecraft.net/com/paulscode/codecwav/20101023/codecwav-20101023.jar"));
+            QCOMPARE(dls[0]->url(), QUrl("https://mva.quad4.io/libraries/com/paulscode/codecwav/20101023/codecwav-20101023.jar"));
         }
         r.system = "osx";
         test.value()->setHint("local");
@@ -303,7 +303,7 @@ class LibraryTest : public QObject {
         auto dls = test.value()->getDownloads(r, cache.get(), failedFiles, QString());
         QCOMPARE(dls.size(), 1);
         QCOMPARE(failedFiles, {});
-        QCOMPARE(dls[0]->url(), QUrl("https://libraries.minecraft.net/org/lwjgl/lwjgl/lwjgl-platform/2.9.4-nightly-20150209/"
+        QCOMPARE(dls[0]->url(), QUrl("https://mva.quad4.io/libraries/org/lwjgl/lwjgl/lwjgl-platform/2.9.4-nightly-20150209/"
                                      "lwjgl-platform-2.9.4-nightly-20150209-natives-osx.jar"));
     }
     void test_onenine_native_arch()
@@ -322,9 +322,9 @@ class LibraryTest : public QObject {
         QCOMPARE(dls.size(), 2);
         QCOMPARE(failedFiles, {});
         QCOMPARE(dls[0]->url(),
-                 QUrl("https://libraries.minecraft.net/tv/twitch/twitch-platform/5.16/twitch-platform-5.16-natives-windows-32.jar"));
+                 QUrl("https://mva.quad4.io/libraries/tv/twitch/twitch-platform/5.16/twitch-platform-5.16-natives-windows-32.jar"));
         QCOMPARE(dls[1]->url(),
-                 QUrl("https://libraries.minecraft.net/tv/twitch/twitch-platform/5.16/twitch-platform-5.16-natives-windows-64.jar"));
+                 QUrl("https://mva.quad4.io/libraries/tv/twitch/twitch-platform/5.16/twitch-platform-5.16-natives-windows-64.jar"));
     }
 
    private:

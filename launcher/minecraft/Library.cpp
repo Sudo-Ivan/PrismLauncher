@@ -34,6 +34,7 @@
  */
 
 #include "Library.h"
+#include "Application.h"
 #include "MinecraftInstance.h"
 #include "net/Request.h"
 
@@ -41,6 +42,33 @@
 #include <FileSystem.h>
 #include <net/ApiRequest.h>
 #include <net/ChecksumValidator.h>
+
+
+namespace {
+QString libraryBaseUrl()
+{
+    QString overrideUrl;
+    if (auto app = APPLICATION_DYN) {
+        overrideUrl = app->settings()->get("LibraryURLOverride").toString();
+    }
+    if (overrideUrl.isEmpty()) {
+        overrideUrl = BuildConfig.LIBRARY_BASE;
+    }
+    if (!overrideUrl.endsWith('/')) {
+        overrideUrl += '/';
+    }
+    return overrideUrl;
+}
+
+QString resolveLibraryDownloadUrl(QString url, const QString& storage)
+{
+    const QUrl original(url);
+    if (url.isEmpty() || original.host().compare("libraries.minecraft.net", Qt::CaseInsensitive) == 0) {
+        return libraryBaseUrl() + storage;
+    }
+    return url;
+}
+}  // namespace
 
 /**
  * @brief Collect applicable files for the library.
@@ -138,6 +166,11 @@ QList<Net::Request::Ptr> Library::getDownloads(const RuntimeContext& runtimeCont
         }
         if (!entry->isStale())
             return true;
+        if (cache->validateLocalFile(entry, QCryptographicHash::Sha1, sha1, true)) {
+            qDebug() << "Using existing file for:" << rawName().serialize() << "storage:" << storage;
+            return true;
+        }
+        url = resolveLibraryDownloadUrl(url, storage);
         Net::Request::Options options;
         if (stale) {
             options |= Net::Request::Option::AcceptLocalFiles;
@@ -204,7 +237,7 @@ QList<Net::Request::Ptr> Library::getDownloads(const RuntimeContext& runtimeCont
             }
 
             if (m_repositoryURL.isEmpty()) {
-                return BuildConfig.LIBRARY_BASE + raw_storage;
+                return libraryBaseUrl() + raw_storage;
             }
 
             if (m_repositoryURL.endsWith('/')) {

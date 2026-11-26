@@ -37,6 +37,8 @@
  *      limitations under the License.
  */
 
+#include <algorithm>
+
 #include <QString>
 
 #include "HardwareInfo.h"
@@ -87,11 +89,13 @@ QString useQTForArch()
 
 int defaultMaxJvmMem()
 {
-    // If totalRAM < 6GB, use (totalRAM / 1.5), else 4GB
-    if (const uint64_t totalRAM = HardwareInfo::totalRamMiB(); totalRAM < (4096 * 1.5))
-        return totalRAM / 1.5;
-    else
-        return 4096;
+    const uint64_t totalRAM = HardwareInfo::totalRamMiB();
+    const uint64_t halfSystemMemory = totalRAM / 2;
+
+    if (totalRAM <= 2048) {
+        return std::max<uint64_t>(512, halfSystemMemory);
+    }
+    return std::clamp<uint64_t>(halfSystemMemory, 1024, 4096);
 }
 
 QString getSupportedJavaArchitecture()

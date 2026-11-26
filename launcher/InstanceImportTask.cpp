@@ -39,6 +39,7 @@
 #include "Application.h"
 #include "FileSystem.h"
 #include "NullInstance.h"
+#include "OfflineBundle.h"
 
 #include "QObjectPtr.h"
 #include "archive/ArchiveReader.h"
@@ -235,6 +236,25 @@ void InstanceImportTask::extractFinished()
         }
     }
 
+    if (OfflineBundle::existsIn(m_stagingPath)) {
+        auto bundleTask = makeShared<OfflineBundleInstallTask>(m_stagingPath);
+        connect(bundleTask.get(), &Task::succeeded, this, &InstanceImportTask::processExtractedPack, Qt::QueuedConnection);
+        connect(bundleTask.get(), &Task::failed, this, &InstanceImportTask::emitFailed);
+        connect(bundleTask.get(), &Task::aborted, this, &InstanceImportTask::emitAborted);
+        connect(bundleTask.get(), &Task::progress, this, &InstanceImportTask::setProgress);
+        connect(bundleTask.get(), &Task::stepProgress, this, &InstanceImportTask::propagateStepProgress);
+        connect(bundleTask.get(), &Task::status, this, &InstanceImportTask::setStatus);
+        connect(bundleTask.get(), &Task::details, this, &InstanceImportTask::setDetails);
+        m_task.reset(bundleTask);
+        bundleTask->start();
+        return;
+    }
+
+    processExtractedPack();
+}
+
+void InstanceImportTask::processExtractedPack()
+{
     switch (m_modpackType) {
         case ModpackType::MultiMC:
             processMultiMC();

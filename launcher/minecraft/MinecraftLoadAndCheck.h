@@ -23,7 +23,7 @@ class MinecraftInstance;
 class MinecraftLoadAndCheck : public Task {
     Q_OBJECT
    public:
-    explicit MinecraftLoadAndCheck(MinecraftInstance* inst, Net::Mode netmode);
+    explicit MinecraftLoadAndCheck(MinecraftInstance* inst, Net::Mode netmode, bool allowOnlineFallback = false);
     virtual ~MinecraftLoadAndCheck() = default;
     void executeTask() override;
 
@@ -35,4 +35,5 @@ class MinecraftLoadAndCheck : public Task {
     MinecraftInstance* m_inst = nullptr;
     Task::Ptr m_task;
     Net::Mode m_netmode;
+    bool m_allowOnlineFallback = false;
 };

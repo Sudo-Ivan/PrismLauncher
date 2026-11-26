@@ -269,7 +269,18 @@ bool reconstructAssets(const QString& assetsId, const QString& resourcesFolder)
 Net::Request::Ptr AssetObject::getDownloadAction() const
 {
     QFileInfo objectFile(getLocalPath());
-    if ((!objectFile.isFile()) || (objectFile.size() != size)) {
+    bool validExistingFile = objectFile.isFile() && objectFile.size() == size;
+    if (validExistingFile && !hash.isEmpty()) {
+        QFile file(objectFile.absoluteFilePath());
+        if (!file.open(QIODevice::ReadOnly)) {
+            validExistingFile = false;
+        } else {
+            QCryptographicHash digest(QCryptographicHash::Sha1);
+            validExistingFile = digest.addData(&file) && digest.result().toHex().compare(hash.toLatin1(), Qt::CaseInsensitive) == 0;
+        }
+    }
+
+    if (!validExistingFile) {
         auto objectDL = Net::ApiRequest::makeFile(getUrl(), objectFile.filePath());
         if (!hash.isEmpty()) {
             objectDL->addValidator(new Net::ChecksumValidator(QCryptographicHash::Sha1, hash));

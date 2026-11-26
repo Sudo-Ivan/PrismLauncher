@@ -159,6 +159,48 @@ auto HttpMetaCache::updateEntry(MetaEntryPtr stale_entry) -> bool
     return true;
 }
 
+auto HttpMetaCache::validateLocalFile(MetaEntryPtr entry,
+                                      QCryptographicHash::Algorithm hashAlgorithm,
+                                      const QString& expectedHash,
+                                      bool eternal) -> bool
+{
+    if (!entry) {
+        return false;
+    }
+
+    QFileInfo fileInfo(entry->getFullPath());
+    if (!fileInfo.isFile() || fileInfo.size() == 0) {
+        return false;
+    }
+
+    QFile file(fileInfo.absoluteFilePath());
+    if (!file.open(QIODevice::ReadOnly)) {
+        return false;
+    }
+    const auto data = file.readAll();
+    if (data.size() != fileInfo.size()) {
+        return false;
+    }
+
+    if (!expectedHash.isEmpty()) {
+        const auto actualHash = QCryptographicHash::hash(data, hashAlgorithm).toHex();
+        if (actualHash.compare(expectedHash.toLatin1(), Qt::CaseInsensitive) != 0) {
+            return false;
+        }
+    }
+
+    entry->setMD5Sum(QCryptographicHash::hash(data, QCryptographicHash::Md5).toHex().constData());
+    entry->setLocalChangedTimestamp(fileInfo.lastModified().toUTC().toMSecsSinceEpoch());
+    entry->makeEternal(eternal);
+    if (!eternal) {
+        entry->setCurrentAge(0);
+        entry->setMaximumAge(7 * 24 * 60 * 60);
+    }
+    entry->setLastRefresh(QDateTime::currentSecsSinceEpoch());
+    entry->setStale(false);
+    return updateEntry(entry);
+}
+
 auto HttpMetaCache::evictEntry(MetaEntryPtr entry) -> bool
 {
     if (!entry)

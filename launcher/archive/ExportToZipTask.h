@@ -47,6 +47,7 @@ class ExportToZipTask : public Task {
 
     void setExcludeFiles(QStringList excludeFiles) { m_excludeFiles = excludeFiles; }
     void addExtraFile(QString fileName, QByteArray data) { m_extraFiles.insert(fileName, data); }
+    void addExtraSourceFile(QString sourcePath, QString fileDest) { m_extraSourceFiles.insert(fileDest, sourcePath); }
 
    protected:
     virtual void executeTask() override;
@@ -64,6 +65,7 @@ class ExportToZipTask : public Task {
     bool m_followSymlinks;
     QStringList m_excludeFiles;
     QHash<QString, QByteArray> m_extraFiles;
+    QHash<QString, QString> m_extraSourceFiles;
 
     QFuture<Result<>> m_buildZipFuture;
     QFutureWatcher<Result<>> m_buildZipWatcher;
