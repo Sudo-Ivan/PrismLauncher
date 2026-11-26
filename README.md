@@ -11,7 +11,7 @@ A fork of [Prism Launcher](https://github.com/PrismLauncher/PrismLauncher) that 
 - Instance export can include the libraries, assets, metadata, and launcher-managed Java runtime needed to play offline. Importing one of these archives restores those shared files before creating the instance.
 - Launches reuse existing verified libraries and download only missing files when possible.
 - Java memory defaults scale with system memory, up to 4 GiB.
-- The Flatpak uses Wayland when available, X11 as a fallback, GPU device access, and controller input device access instead of full device access.
+- The Flatpak uses Wayland when available, X11 as a fallback, and GPU device access instead of full device access.
 - The updater points at this repository.
 - CI builds Windows x64 and Linux x64 only. Releases include a Linux AppImage, a Flatpak bundle, a Linux portable tarball, and Windows zip and installer packages.
 - Upstream project files such as the Code of Conduct, contribution guide, funding metadata, issue templates, and community badges were removed.

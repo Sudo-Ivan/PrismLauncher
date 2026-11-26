@@ -11,8 +11,6 @@ finish-args:
   - --socket=wayland
     # GPU access for OpenGL and Vulkan
   - --device=dri
-    # Game controllers. Requires Flatpak 1.15.6 or newer.
-  - --device=input
   - --share=network
   - --socket=pulseaudio
     # for Discord RPC mods
