@@ -110,12 +110,68 @@ class MVATest : public QObject {
             return runtime->runtimeOS == "linux-x64";
         });
         QVERIFY(linuxRuntime != data->runtimes.end());
+        QCOMPARE((*linuxRuntime)->m_name, QString("java-runtime-delta"));
         QCOMPARE((*linuxRuntime)->downloadType, Java::DownloadType::Archive);
         QCOMPARE((*linuxRuntime)->packageType, QString("jdk"));
         QCOMPARE((*linuxRuntime)->version.major(), 21);
         QVERIFY((*linuxRuntime)->url.startsWith("https://mva.quad4.io/java/temurin/21/"));
         QCOMPARE((*linuxRuntime)->checksumType, QString("sha256"));
         QVERIFY(!(*linuxRuntime)->checksumHash.isEmpty());
+    }
+
+    void test_fabricLoaderDetailShape()
+    {
+        const auto source = QFINDTESTDATA("testdata/MVA/net.fabricmc.fabric-loader-0.18.4.json");
+        QVERIFY(!source.isEmpty());
+        const auto doc = Json::requireDocument(source);
+        if (!doc) {
+            QFAIL(qPrintable(doc.error()));
+        }
+
+        Meta::Version version("net.fabricmc.fabric-loader", "0.18.4");
+        const auto result = Meta::parseVersion(doc->object(), &version);
+        if (!result) {
+            QFAIL(qPrintable(result.error()));
+        }
+
+        const auto data = version.data();
+        QVERIFY(data);
+        QCOMPARE(data->mainClass, QString("net.fabricmc.loader.impl.launch.knot.KnotClient"));
+        QVERIFY(!data->libraries.isEmpty());
+        const auto names = data->libraries;
+        QVERIFY(std::any_of(names.begin(), names.end(), [](const LibraryPtr& lib) {
+            return lib->rawName().serialize() == "net.fabricmc:fabric-loader:0.18.4";
+        }));
+        QVERIFY(std::any_of(names.begin(), names.end(), [](const LibraryPtr& lib) {
+            return lib->rawName().serialize() == "net.fabricmc:intermediary:1.21.1";
+        }));
+        QVERIFY(std::any_of(data->m_requires.begin(), data->m_requires.end(), [](const Meta::Require& req) {
+            return req.uid == "net.fabricmc.intermediary";
+        }));
+    }
+
+    void test_intermediaryDetailShape()
+    {
+        const auto source = QFINDTESTDATA("testdata/MVA/net.fabricmc.intermediary-1.21.1.json");
+        QVERIFY(!source.isEmpty());
+        const auto doc = Json::requireDocument(source);
+        if (!doc) {
+            QFAIL(qPrintable(doc.error()));
+        }
+
+        Meta::Version version("net.fabricmc.intermediary", "1.21.1");
+        const auto result = Meta::parseVersion(doc->object(), &version);
+        if (!result) {
+            QFAIL(qPrintable(result.error()));
+        }
+
+        const auto data = version.data();
+        QVERIFY(data);
+        QCOMPARE(data->libraries.size(), 1);
+        QCOMPARE(data->libraries.first()->rawName().serialize(), QString("net.fabricmc:intermediary:1.21.1"));
+        QVERIFY(std::any_of(data->m_requires.begin(), data->m_requires.end(), [](const Meta::Require& req) {
+            return req.uid == "net.minecraft" && req.equalsVersion == "1.21.1";
+        }));
     }
 
 };
