@@ -145,7 +145,8 @@ Request::Request(const QUrl& url, QByteArray postData, Options options)
     : Request(Spec{ .method = HttpMethod::Post, .url = url, .data = std::move(postData), .options = options })
 {}
 
-Request::Request(const Spec& spec) : m_options(spec.options), m_url(spec.url), m_httpMethod(spec.method), m_postData(spec.data)
+Request::Request(const Spec& spec)
+    : m_options(spec.options), m_url(spec.url), m_fallbackSourceUrl(spec.url), m_httpMethod(spec.method), m_postData(spec.data)
 {
     connect(&m_retryTimer, &QTimer::timeout, this, &Request::executeTask);
 
@@ -325,6 +326,17 @@ void Request::sslErrors(const QList<QSslError>& errors)
 
 auto Request::handleRedirect() -> bool
 {
+    switch (replyStatusCode()) {
+        case 301:
+        case 302:
+        case 303:
+        case 307:
+        case 308:
+            break;
+        default:
+            return false;
+    }
+
     QUrl redirect = m_reply->header(QNetworkRequest::LocationHeader).toUrl();
     if (!redirect.isValid()) {
         if (!m_reply->hasRawHeader("Location")) {
@@ -369,6 +381,16 @@ auto Request::handleRedirect() -> bool
         qCDebug(m_logCat) << getUid().toString() << "Fixed location header:" << redirect;
     } else {
         qCDebug(m_logCat) << getUid().toString() << "Location header:" << redirect;
+    }
+
+    if (redirect.isRelative()) {
+        redirect = m_reply->url().resolved(redirect);
+    }
+    if ((redirect.scheme() != "http" && redirect.scheme() != "https") ||
+        (m_reply->url().scheme() == "https" && redirect.scheme() != "https")) {
+        qCWarning(m_logCat) << getUid().toString() << "Rejected unsafe redirect:" << redirect.toString();
+        downloadError(QNetworkReply::ProtocolFailure);
+        return false;
     }
 
     m_url = QUrl(redirect.toString());
@@ -499,7 +521,7 @@ bool Request::tryUpstreamFallback()
     if (m_usedUpstreamFallback || m_httpMethod != HttpMethod::Get) {
         return false;
     }
-    const auto fallback = upstreamFallbackUrl(m_url);
+    const auto fallback = upstreamFallbackUrl(m_fallbackSourceUrl.isValid() ? m_fallbackSourceUrl : m_url);
     if (!fallback.isValid() || fallback == m_url) {
         return false;
     }

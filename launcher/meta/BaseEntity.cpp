@@ -84,7 +84,13 @@ Task::Ptr BaseEntity::loadTask(Net::Mode loadType, bool forceReload)
 bool BaseEntity::isLoaded() const
 {
     // consider it loaded only if the main hash is either empty and was remote loadded or the hashes match and was loaded
-    return m_sha256.isEmpty() ? m_loadStatus == LoadStatus::Remote : m_loadStatus != LoadStatus::NotLoaded && m_sha256 == m_fileSha256;
+    if (m_loadStatus == LoadStatus::Remote) {
+        return true;
+    }
+    if (m_sha256.isEmpty()) {
+        return false;
+    }
+    return m_loadStatus != LoadStatus::NotLoaded && m_sha256 == m_fileSha256;
 }
 
 void BaseEntity::setSha256(QString sha256)
@@ -123,7 +129,7 @@ void BaseEntityLoadTask::executeTask()
             const auto& actual = m_entity->m_fileSha256;
             hashMatches = expected == actual;
             if (m_mode == Net::Mode::Online && !m_entity->m_sha256.isEmpty() && !hashMatches) {
-                return std::unexpected(QString("Checksum mismatch, expected sha256: %1, got: %2").arg(expected, actual));
+                return {};
             }
 
             // load local file
@@ -155,6 +161,7 @@ void BaseEntityLoadTask::executeTask()
 void BaseEntityLoadTask::startRemoteLoad(bool useUpstreamFallback)
 {
     m_task.reset(new NetJob(QObject::tr("Download of meta file %1").arg(m_entity->localFilename()), APPLICATION->network()));
+    m_task->setMaxRetries(0);
     auto url = useUpstreamFallback ? m_entity->upstreamUrl() : m_entity->url();
     auto entry = APPLICATION->metacache()->resolveEntry("meta", m_entity->localFilename());
     if (m_forceReload) {
@@ -186,7 +193,10 @@ void BaseEntityLoadTask::startRemoteLoad(bool useUpstreamFallback)
     });
     connect(m_task.get(), &Task::succeeded, this, [this]() {
         m_entity->m_loadStatus = BaseEntity::LoadStatus::Remote;
-        m_entity->m_fileSha256 = m_entity->m_sha256;
+        const QString fname = QDir("meta").absoluteFilePath(m_entity->localFilename());
+        if (auto data = FS::read(fname)) {
+            m_entity->m_fileSha256 = Hashing::hash(*data, Hashing::Algorithm::Sha256);
+        }
         emitSucceeded();
     });
 

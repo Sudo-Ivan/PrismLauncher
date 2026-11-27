@@ -146,7 +146,11 @@ class Request : public Task {
     void enableAutoRetry(bool enable);
 
     QUrl url() const;
-    void setUrl(QUrl url) { m_url = std::move(url); }
+    void setUrl(QUrl url)
+    {
+        m_url = std::move(url);
+        m_fallbackSourceUrl = m_url;
+    }
     int replyStatusCode() const;
     QNetworkReply::NetworkError error() const;
     QString errorString() const;
@@ -188,6 +192,7 @@ class Request : public Task {
 
     /// source URL
     QUrl m_url;
+    QUrl m_fallbackSourceUrl;
     std::vector<std::unique_ptr<Net::HeaderProxy>> m_headerProxies;
 
     int m_retryCount = 0;
